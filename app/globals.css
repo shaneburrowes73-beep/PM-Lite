@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* globals.css */
+:root {
+  --color-brand-blue: #2563eb;
+  --color-brand-orange: #f59e0b;
+  --color-brand-green: #10b981;
+  --color-brand-gray: #6b7280;
+  --color-brand-light: #f9fafb;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -18,4 +27,23 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: #111827;
+  background-color: #ffffff;
+}
+
+a {
+  color: var(--color-brand-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.9;
+}
+
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
 }
