@@ -24,6 +24,7 @@ const config: Config = {
         // Without these, those classes resolve to no-colour and buttons render invisible until hover.
         primary: '#2563eb',
         dark: '#1f2937',
+        accent: '#3b82f6',
       },
       spacing: {
         xs: '4px',

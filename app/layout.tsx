@@ -1,8 +1,12 @@
+import type { Metadata } from 'next'
 import './globals.css'
 
-export const metadata = {
-  title: 'PM Lite',
-  description: 'Lightweight portfolio management toolkit for small studios.',
+export const metadata: Metadata = {
+  title: 'PM Lite — Project Governance Tracker',
+  description: 'Lightweight project governance and decision tracking for product managers.',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({
