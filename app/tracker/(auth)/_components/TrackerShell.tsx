@@ -19,7 +19,8 @@ export default function TrackerShell({
   useEffect(() => {
         const getUser = async () => {
                 const { data: { user } } = await supabase.auth.getUser()
-                setUser(user)
+                                // @ts-ignore    
+            setUser(user)
                 setLoading(false)
         }
         getUser()
