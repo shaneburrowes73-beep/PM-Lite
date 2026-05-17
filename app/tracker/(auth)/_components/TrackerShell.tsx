@@ -10,6 +10,7 @@ export default function TrackerShell({
 }: {
     children: React.ReactNode
 }) {
+            // @ts-ignore
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const router = useRouter()
