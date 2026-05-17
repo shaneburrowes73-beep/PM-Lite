@@ -1,4 +1,4 @@
-name: Build and Deploy
+﻿name: Code Quality Checks
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
 
     strategy:
@@ -34,11 +34,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Deploy to Vercel
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: vercel/action@v6
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
