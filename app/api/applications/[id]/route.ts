@@ -9,7 +9,7 @@ const ALLOWED_PATCH_FIELDS = [
 ]
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   const supabase = await createClient()
