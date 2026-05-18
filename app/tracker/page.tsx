@@ -1,129 +1,83 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import Link from 'next/link'
+import { Application } from '@/lib/tracker/types'
+import { STATUS_COLORS, STATUS_LABELS, PRIORITY_LABELS } from '@/lib/tracker/constants'
 
-export default function TrackerPage() {
-  const [user, setUser] = useState<any>(null)
+export default function DashboardPage() {
+  const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const fetchApplications = async () => {
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-        if (!supabaseUrl || !supabaseKey) {
-          router.push('/login')
-          return
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey)
-        const { data } = await supabase.auth.getSession()
-
-        if (!data?.session) {
-          router.push('/login')
-        } else {
-          setUser(data.session.user)
-        }
-      } catch (error) {
-        console.error('Error checking auth:', error)
-        router.push('/login')
+        const response = await fetch('/api/applications', { credentials: 'include' })
+        if (!response.ok) throw new Error('Failed to fetch applications')
+        const data = await response.json()
+        setApplications(data.applications || [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
       } finally {
         setLoading(false)
       }
     }
 
-    checkAuth()
-  }, [router])
+    fetchApplications()
+  }, [])
 
-  const handleLogout = async () => {
-    try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-      if (supabaseUrl && supabaseKey) {
-        const supabase = createClient(supabaseUrl, supabaseKey)
-        await supabase.auth.signOut()
-      }
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
-  }
+  if (loading) return <div className="text-center py-8">Loading applications...</div>
+  if (error) return <div className="text-red-600 p-4 bg-red-50 rounded">{error}</div>
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">PM Lite</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-600">{user?.email}</span>
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition"
-            >
-              Logout
-            </button>
-          </div>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Applications and Projects</h1>
+        <p className="text-gray-600">Track status, outstanding items, and assignments</p>
+      </div>
+
+      {applications.length === 0 ? (
+        <div className="text-center py-12 bg-gray-100 rounded-lg">
+          <p className="text-gray-600">No applications found. Create one to get started.</p>
         </div>
-      </nav>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {applications.map((app) => (
+            <Link key={app.id} href={'/tracker/applications/' + app.id}>
+              <div className="bg-white rounded-lg shadow hover:shadow-lg transition p-6 cursor-pointer">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">{app.name}</h2>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
-          <p className="text-gray-600">Welcome to PM Lite — Project Governance Tracker</p>
+                <div className="flex gap-2 mb-4">
+                  <span className={'px-3 py-1 rounded-full text-xs font-semibold border ' + (STATUS_COLORS[app.status] || 'bg-gray-100')}>
+                    {STATUS_LABELS[app.status] || app.status}
+                  </span>
+                  <span className={'px-3 py-1 rounded-full text-xs font-semibold ' + (app.priority === 'CRITICAL' ? 'bg-red-100 text-red-800' : app.priority === 'HIGH' ? 'bg-orange-100 text-orange-800' : app.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')}>
+                    {PRIORITY_LABELS[app.priority] || app.priority}
+                  </span>
+                </div>
+
+                {app.description && (
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{app.description}</p>
+                )}
+
+                {app.github_url && (
+                  <p className="text-xs text-blue-600 truncate mb-4">
+                    <a href={app.github_url} target="_blank" rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}>
+                      GitHub
+                    </a>
+                  </p>
+                )}
+
+                <div className="text-xs text-gray-500">
+                  Click to view details and outstanding items
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">RAIDD Entries</h3>
-            <p className="text-4xl font-bold text-blue-600">0</p>
-            <p className="text-gray-600 text-sm mt-2">Coming in Phase 1</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Lessons Learned</h3>
-            <p className="text-4xl font-bold text-green-600">0</p>
-            <p className="text-gray-600 text-sm mt-2">Coming in Phase 1</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Feedback Score</h3>
-            <p className="text-4xl font-bold text-gray-400">—</p>
-            <p className="text-gray-600 text-sm mt-2">Coming in Phase 2</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Phase 0 Status ✅ Complete</h3>
-          <ul className="space-y-2 text-gray-700">
-            <li>✅ Next.js 14 skeleton deployed</li>
-            <li>✅ Supabase authentication configured</li>
-            <li>✅ Login/signup flow working</li>
-            <li>✅ Dashboard accessible after login</li>
-            <li>✅ CI/CD pipeline active (GitHub → Vercel)</li>
-          </ul>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">Phase 1 Next Steps</h3>
-          <ul className="space-y-2 text-blue-800">
-            <li>• Add RAIDD entry form (Risks, Assumptions, Issues, Dependencies, Decisions)</li>
-            <li>• Create lessons learned database UI</li>
-            <li>• Build decisions register</li>
-            <li>• Add feedback form (10 questions, SMART scoring)</li>
-            <li>• Connect to Supabase tables for CRUD operations</li>
-            <li>• Estimated effort: 4 weeks, 63 hours</li>
-          </ul>
-        </div>
-      </main>
+      )}
     </div>
   )
 }
