@@ -1,0 +1,624 @@
+{
+  "name": "meeting-minutes-to-raidd",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## meeting-minutes-to-raidd v1.0\n\nWebhook + Manual triggers > Merge > Validate > Idempotency check > Claude extraction > Slack approval > Insert > Confirm.\n\nCredentials required:\n- PM Lite Webhook Token (httpHeaderAuth, value of X-PMLite-Token header)\n- PM Lite Supabase (auto-assigned)\n- Anthropic API Key (httpHeaderAuth, x-api-key header)\n- PM Lite Slack (oAuth2)\n\nDeliverable: export as workflows/meeting-minutes-to-raidd.json in PM-Lite repo.",
+        "height": 600,
+        "width": 800,
+        "color": 5
+      },
+      "id": "90a40325-5d0d-439a-86a9-839c36bb750f",
+      "name": "Sticky Note d763b121",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pm-lite/meeting-minutes",
+        "authentication": "headerAuth",
+        "options": {
+          "responseCode": {
+            "values": {}
+          },
+          "responseData": "{\"received\": true}"
+        }
+      },
+      "id": "c338a056-a291-49a0-be46-058921eeef15",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        192
+      ],
+      "webhookId": "88a955ca-8062-474a-8a8b-21c61605f61e",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9AAqmrnAkXkwhaJb",
+          "name": "PM Lite Webhook Token"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "22e4e41f-5c54-4be9-8280-1f44c5cdf3aa",
+      "name": "Merge Trigger Inputs",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        96
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "342ab2e8-cc4d-44b0-93cc-5dfab1dbac0b",
+      "name": "Manual Test Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: {\n  body: {\n    request_id: \"test-00000000-0000-0000-0000-000000000001\",\n    project_id: \"pm-lite\",\n    meeting_id: \"test-meeting-001\",\n    meeting_date: \"2026-05-18\",\n    meeting_title: \"Test meeting - sample transcript\",\n    transcript: \"Shane: OK so the main thing today is we need to decide on the email provider - we have Resend currently but it is being deprecated. Options are Gmail SMTP or Postmark. Gmail SMTP is what we use everywhere else. Co-founder: Right, and there is a risk that if we do not switch in the next two weeks, deliverability drops because Resend free tier is throttling. Shane: Agreed. So decision: switch to Gmail SMTP. I will own the migration, target date Friday next week. Co-founder: Also - we noticed in QA that the password reset email is landing on the homepage with an OTP error, not the reset page. Issue I would say high severity. Shane: Yeah, Supabase Auth URL configuration. Known fix. I will do it as part of the same migration. Co-founder: And one more - assumption check: are we sure all tenants want Gmail SMTP, or should we make it configurable per tenant? Shane: Good point, capture as an assumption for now, we will validate with the first two paying tenants. Lesson - every email-provider decision needs a per-tenant configurability check, not just a global default.\",\n    attendees: [\"Shane Burrowes\", \"Co-founder\"],\n    source_tool: \"manual\"\n  }\n} }];"
+      },
+      "id": "77372825-f894-4ce7-9e29-f218cd14bef2",
+      "name": "Build Test Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst out = [];\nfor (const it of items) {\n  const payload = it.json.body || it.json;\n  const required = [\"request_id\", \"project_id\", \"meeting_date\", \"meeting_title\", \"source_tool\"];\n  const missing = required.filter(k => !payload[k]);\n  if (missing.length) {\n    throw new Error(\"Missing required fields: \" + missing.toString());\n  }\n  if (!payload.transcript && !payload.minutes_url) {\n    throw new Error(\"Either minutes_url or transcript must be provided\");\n  }\n  if (payload.transcript && payload.minutes_url) {\n    throw new Error(\"Provide minutes_url OR transcript, not both\");\n  }\n  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(payload.meeting_date)) {\n    throw new Error(\"meeting_date must be YYYY-MM-DD, got: \" + payload.meeting_date);\n  }\n  const allowedSources = [\"fireflies\", \"otter\", \"granola\", \"read-ai\", \"manual\"];\n  if (!allowedSources.includes(payload.source_tool)) {\n    throw new Error(\"source_tool must be one of \" + allowedSources.toString());\n  }\n  const normalised = Object.assign({}, payload, {\n    received_at: new Date().toISOString(),\n    workflow_version: \"1.0\"\n  });\n  out.push({ json: normalised });\n}\nreturn out;"
+      },
+      "id": "96b99ef3-49ae-453f-8d12-323b64676014",
+      "name": "Validate and Normalise",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "raidd_entries",
+        "returnAll": true,
+        "filterType": "string",
+        "filterString": "=metadata->>request_id=eq.{{ $json.request_id }}&project_id=eq.{{ $json.project_id }}"
+      },
+      "id": "9285c021-0e7a-46a8-9eef-6c50e8aa3602",
+      "name": "Idempotency Check",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        896,
+        96
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "C0xCL9qz6JNNodLN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9da941f8-5cc6-4396-8b84-f6c7e19edf98",
+      "name": "Already Processed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "status",
+              "value": "already_processed",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "request_id",
+              "value": "={{ $(\"Validate and Normalise\").item.json.request_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "97350c07-ecd6-42a0-aa94-95618502f319",
+      "name": "Skip - Already Processed",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "system",
+              "value": "You extract structured RAIDD entries from meeting transcripts for a project management tracker.\n\nRAIDD entry types:\n- \"risk\": something that might go wrong (has severity, likelihood)\n- \"issue\": something that has gone wrong / is currently wrong (has severity)\n- \"decision\": a choice made with rationale (has rationale + consequences)\n- \"dependency\": an external thing the project needs\n- \"assumption\": a belief the project depends on being true\n- \"lesson\": a durable pattern worth carrying to future projects\n\nRouting rules (CRITICAL):\n1. A choice made between options -> decision entry with rationale.\n2. Worry that could derail delivery -> risk entry; set severity (low/medium/high/critical) and likelihood.\n3. Something currently broken -> issue entry with severity.\n4. External thing the project needs -> dependency entry.\n5. Belief the project depends on -> assumption entry.\n6. Pattern worth carrying forward -> lesson entry.\n7. Delivery-critical action assigned to someone -> NOT a separate entry. It becomes the action_or_mitigation field on the parent risk or issue.\n8. Ambient action (book a room, send a thank-you) -> NOT in tracker, ignore.\n\nFor EACH extracted entry, output JSON with these fields:\n{\n  \"type\": \"risk|issue|decision|dependency|assumption|lesson\",\n  \"title\": \"short under 100 chars\",\n  \"description\": \"1-3 sentences\",\n  \"severity\": \"low|medium|high|critical or null\",\n  \"likelihood\": \"low|medium|high|critical or null\",\n  \"owner\": \"name from transcript or null\",\n  \"rationale\": \"decisions only\",\n  \"consequences\": \"decisions only\",\n  \"action_or_mitigation\": \"risks/issues only - concrete next step with owner + date if known\",\n  \"related_entries\": [],\n  \"evidence_quote\": \"verbatim phrase from transcript (max 200 chars)\"\n}\n\nReturn ONLY a JSON object:\n{\n  \"entries\": [ /* extracted entries */ ],\n  \"summary\": \"2-3 sentence meeting summary\",\n  \"skipped_items\": [ /* strings describing what was deliberately not extracted */ ]\n}\n\nNo prose before or after the JSON. If nothing extractable, return entries: [] with skipped_items explaining why.",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "user",
+              "value": "=Meeting: {{ $(\"Validate and Normalise\").item.json.meeting_title }}\nDate: {{ $(\"Validate and Normalise\").item.json.meeting_date }}\nProject: {{ $(\"Validate and Normalise\").item.json.project_id }}\n\nTranscript / minutes:\n\n{{ $(\"Validate and Normalise\").item.json.transcript }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dfd2581b-61c9-487b-aea5-2a38547df946",
+      "name": "Build Claude Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-5\",\n  \"max_tokens\": 4096,\n  \"system\": {{ JSON.stringify($(\"Build Claude Prompt\").item.json.system) }},\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify($(\"Build Claude Prompt\").item.json.user) }}\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "0a0d660c-0681-4949-9bb4-ebfecab7e6c4",
+      "name": "Claude Extracts RAIDD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        192
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1A0nFsaGplP7bwMT",
+          "name": "Anthropic API — AI Solutions n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const claudeResponse = $input.first().json;\nconst meetingPayload = $(\"Validate and Normalise\").first().json;\n\nconst rawText = claudeResponse.content && claudeResponse.content[0] && claudeResponse.content[0].text\n  ? claudeResponse.content[0].text\n  : (typeof claudeResponse === \"string\" ? claudeResponse : JSON.stringify(claudeResponse));\n\nconst cleaned = rawText.replace(/^\\s*```(?:json)?\\s*/i, \"\").replace(/\\s*```\\s*$/i, \"\").trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (e) {\n  throw new Error(\"Claude returned non-JSON response: \" + e.message + \"; raw: \" + cleaned.substring(0, 500));\n}\n\nconst entries = parsed.entries || [];\nconst summary = parsed.summary || \"\";\nconst skippedItems = parsed.skipped_items || [];\n\nconst prefixMap = {\n  risk: \"R-\",\n  issue: \"I-\",\n  decision: \"D-\",\n  dependency: \"Dep-\",\n  assumption: \"A-\",\n  lesson: \"L-\"\n};\n\nconst enriched = entries.map((e, idx) => {\n  const entryId = prefixMap[e.type] + String(Date.now()).slice(-6) + \"-\" + String(idx + 1).padStart(2, \"0\");\n  return {\n    project_id: meetingPayload.project_id,\n    entry_id: entryId,\n    type: e.type,\n    title: e.title,\n    description: e.description,\n    status: (e.type === \"risk\" || e.type === \"issue\") ? \"open\" : \"active\",\n    severity: e.severity || null,\n    likelihood: e.likelihood || null,\n    owner: e.owner || null,\n    rationale: e.rationale || null,\n    consequences: e.consequences || null,\n    action_or_mitigation: e.action_or_mitigation || null,\n    opened_date: meetingPayload.meeting_date,\n    source_doc: meetingPayload.meeting_title,\n    source_url: meetingPayload.minutes_url || null,\n    metadata: {\n      request_id: meetingPayload.request_id,\n      meeting_id: meetingPayload.meeting_id,\n      source_tool: meetingPayload.source_tool,\n      evidence_quote: e.evidence_quote || \"\",\n      extracted_by: \"claude-sonnet-4-5\",\n      workflow: \"meeting-minutes-to-raidd\",\n      workflow_version: \"1.0\"\n    }\n  };\n});\n\nconst lines = enriched.map((e, i) => (i + 1) + \". [\" + e.type.toUpperCase() + \"] \" + e.title + (e.severity ? \" (sev: \" + e.severity + \")\" : \"\") + (e.owner ? \" - owner: \" + e.owner : \"\"));\nconst skippedLines = skippedItems.map(s => \"- \" + s);\n\nconst approvalText = \"*RAIDD entries from: \" + meetingPayload.meeting_title + \"*\\n\\n\" +\n  \"*Project:* \" + meetingPayload.project_id + \"  *Date:* \" + meetingPayload.meeting_date + \"\\n\" +\n  \"*Source:* \" + meetingPayload.source_tool + \"\\n\" +\n  \"*Attendees:* \" + (meetingPayload.attendees || []).toString() + \"\\n\\n\" +\n  \"*Summary:* \" + summary + \"\\n\\n\" +\n  \"*Proposed entries (\" + enriched.length + \"):*\\n\" +\n  lines.toString().replace(/,/g, \"\\n\") +\n  (skippedItems.length ? \"\\n\\n*Skipped (not extracted):*\\n\" + skippedLines.toString().replace(/,/g, \"\\n\") : \"\");\n\nreturn [{ json: {\n  entries: enriched,\n  summary: summary,\n  skipped_items: skippedItems,\n  approval_text: approvalText,\n  entry_count: enriched.length,\n  request_id: meetingPayload.request_id,\n  project_id: meetingPayload.project_id,\n  meeting_title: meetingPayload.meeting_title\n} }];"
+      },
+      "id": "473132e6-45a6-4012-a9fa-f4aca163408a",
+      "name": "Parse Claude + Build Entries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "sendAndWait",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "pm-lite-raidd-approvals"
+        },
+        "message": "={{ $json.approval_text }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "Approve all",
+            "disapproveLabel": "Reject all"
+          }
+        },
+        "options": {
+          "limitWaitTime": {
+            "values": {
+              "resumeAmount": 24
+            }
+          },
+          "appendAttribution": false
+        }
+      },
+      "id": "af158c62-6d6f-40ab-8d50-2e53cb9cb469",
+      "name": "Slack Approval",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        2016,
+        192
+      ],
+      "webhookId": "c712bfcc-0660-4b18-ae57-26a46429849e",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "4K8SLrs6UUwfmhvb",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b703fffc-e597-4431-88c4-ba9c48afdfbb",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2240,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $(\"Parse Claude + Build Entries\").first().json;\nreturn (data.entries || []).map(e => ({ json: e }));"
+      },
+      "id": "0e84c331-d432-4ad2-8d1f-510a5ffbf5e8",
+      "name": "Split Entries for Insert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "raidd_entries",
+        "dataToSend": "autoMapInputData"
+      },
+      "id": "81f0250d-db60-43c4-94d7-ffd3c40fbe43",
+      "name": "Insert RAIDD Entries",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2688,
+        96
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "C0xCL9qz6JNNodLN",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "pm-lite-raidd-approvals"
+        },
+        "text": "=Inserted {{ $(\"Parse Claude + Build Entries\").item.json.entry_count }} RAIDD entries for {{ $(\"Parse Claude + Build Entries\").item.json.project_id }} from meeting \"{{ $(\"Parse Claude + Build Entries\").item.json.meeting_title }}\"",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "b57d6dcc-9505-415e-b076-5903e6588133",
+      "name": "Slack Confirmation",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        2912,
+        96
+      ],
+      "webhookId": "5b457dfa-b619-457e-9950-8091feae459a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "4K8SLrs6UUwfmhvb",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "pm-lite-raidd-approvals"
+        },
+        "text": "=Entries rejected for meeting \"{{ $(\"Parse Claude + Build Entries\").item.json.meeting_title }}\" - no inserts made.",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "bbb0eda6-2c71-4e67-9eaa-515db3836c43",
+      "name": "Slack Rejection Notice",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        2464,
+        288
+      ],
+      "webhookId": "3cc55bd4-d999-4fad-82bf-0f7c26dc45d2",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "4K8SLrs6UUwfmhvb",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Merge Trigger Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Trigger Inputs": {
+      "main": [
+        [
+          {
+            "node": "Validate and Normalise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Test Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Test Payload": {
+      "main": [
+        [
+          {
+            "node": "Merge Trigger Inputs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Validate and Normalise": {
+      "main": [
+        [
+          {
+            "node": "Idempotency Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idempotency Check": {
+      "main": [
+        [
+          {
+            "node": "Already Processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Processed?": {
+      "main": [
+        [
+          {
+            "node": "Skip - Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Claude Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Claude Prompt": {
+      "main": [
+        [
+          {
+            "node": "Claude Extracts RAIDD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Extracts RAIDD": {
+      "main": [
+        [
+          {
+            "node": "Parse Claude + Build Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Claude + Build Entries": {
+      "main": [
+        [
+          {
+            "node": "Slack Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Approval": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Split Entries for Insert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Rejection Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Entries for Insert": {
+      "main": [
+        [
+          {
+            "node": "Insert RAIDD Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert RAIDD Entries": {
+      "main": [
+        [
+          {
+            "node": "Slack Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "72bd79c8-911b-4c41-b112-8769719acae2",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "789bef566f2bc00054965dee97b3090bce273ae35aec85d4ae80b4fc335963c9"
+  },
+  "id": "CtoMkvgZ2l1Z3DcQ",
+  "tags": []
+}
