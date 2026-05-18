@@ -38,3 +38,7 @@ yarn-error.log*
 
 # OS
 Thumbs.db
+
+# OneDrive metadata
+desktop.ini
+**/desktop.ini
