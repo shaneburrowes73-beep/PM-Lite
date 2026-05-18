@@ -1,46 +1,11 @@
-'use client'
-<<<<<<< HEAD
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-
-export function TrackerShell({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const res = await fetch('/api/auth/me')
-      setIsLoggedIn(res.ok)
-    }
-    checkAuth()
-  }, [])
-
-  if (!isLoggedIn) {
-    return <div>Loading...</div>
-  }
-
-  return (
-    <div>
-      <header className="border-b">
-        <nav className="p-4 flex justify-between">
-          <Link href="/tracker">Dashboard</Link>
-          <button onClick={() => { router.push('/login') }}>
-            Logout
-          </button>
-        </nav>
-      </header>
-      {children}
-    </div>
-  )
-=======
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-export default function TrackerShell({
+export function TrackerShell({
     children,
 }: {
     children: React.ReactNode
@@ -54,7 +19,7 @@ export default function TrackerShell({
   useEffect(() => {
         const getUser = async () => {
                 const { data: { user } } = await supabase.auth.getUser()
-                                // @ts-ignore    
+                                // @ts-ignore
             setUser(user)
                 setLoading(false)
         }
@@ -73,7 +38,7 @@ export default function TrackerShell({
                 </div>
               )
   }
-  
+
     return (
           <div className="min-h-screen bg-gray-50">
                 <header className="bg-white shadow">
@@ -100,5 +65,4 @@ export default function TrackerShell({
                 <main className="max-w-7xl mx-auto px-4 py-8">{children}</main>
           </div>
         )
->>>>>>> 54991a77d8f4ce8694e7b74e15c4a7be268bf59d
 }
