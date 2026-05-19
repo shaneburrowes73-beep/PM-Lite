@@ -1,6 +1,6 @@
 # [Project Name] — Incident Response
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** [YYYY-MM-DD]
 **Owner:** [Name]
 **On-call:** [Name + contact, or "see 1Password rota"]
@@ -24,12 +24,16 @@ If unsure, treat it as an incident. The cost of running this checklist for a non
 
 ## Severity scale
 
-| Level | Definition | First-response target |
-|---|---|---|
-| **SEV-1 — Critical** | Total outage; data breach; credential leak with confirmed external access | Within 15 minutes |
-| **SEV-2 — High** | Partial outage; suspected breach; critical security alert; tenant-facing data error | Within 1 hour |
-| **SEV-3 — Medium** | Performance degradation; non-critical security alert; backup failure | Within 4 hours |
-| **SEV-4 — Low** | Cosmetic issue, single-user impact, no security implication | Next business day |
+This template uses the kit's canonical severity vocabulary (`critical / high / medium / low`) defined in `17_triage-guidance.md` §5. For incident-pager and runbook convenience, **`SEV-1` / `SEV-2` / `SEV-3` / `SEV-4` are aliases** for `critical` / `high` / `medium` / `low` respectively. The two forms are interchangeable; the lowercase form is canonical for tracker fields (`raidd_entries.severity`, `lessons_entries.severity`, etc.).
+
+| Canonical | Incident alias | Definition | First-response target |
+|---|---|---|---|
+| **critical** | **SEV-1** | Total outage; data breach; credential leak with confirmed external access | Within 15 minutes |
+| **high** | **SEV-2** | Partial outage; suspected breach; critical security alert; tenant-facing data error | Within 1 hour |
+| **medium** | **SEV-3** | Performance degradation; non-critical security alert; backup failure | Within 4 hours |
+| **low** | **SEV-4** | Cosmetic issue, single-user impact, no security implication | Next business day |
+
+When logging in the tracker (`07_raidd-log.md`, `08_lessons-learned.md`), use the lowercase canonical form. When using verbal shorthand on-call or in pager titles, the SEV-N form is fine.
 
 ---
 
@@ -42,7 +46,7 @@ If unsure, treat it as an incident. The cost of running this checklist for a non
    - **Incident commander** — coordinates response, talks to stakeholders.
    - **Investigator** — looks at the technical evidence.
    - **Comms** — handles tenant communication (if tenant-facing).
-5. **Confirm severity** based on the scale above.
+5. **Confirm severity** based on the scale above. Triage discipline per `17_triage-guidance.md` §1.
 6. **Start the timeline** in this document (see template below).
 
 ---
@@ -86,7 +90,7 @@ If unsure, treat it as an incident. The cost of running this checklist for a non
 3. If RLS bypass: rotate service-role key, fix the policy, redeploy.
 4. **Notify the affected tenant** with: what was accessed, when, what action you've taken.
 5. **Document** for GDPR / regulatory reporting if required.
-- **Target:** investigate within 2 hours; notify within 4 hours for SEV-1.
+- **Target:** investigate within 2 hours; notify within 4 hours for SEV-1 incidents.
 
 ### Playbook D — Vercel deployment ERROR while home page shows green
 
@@ -99,7 +103,7 @@ This is the recurring portfolio gotcha. The Vercel home page lies; the Deploymen
 3. Read the build log to identify the cause.
 4. Fix locally, push, verify.
 5. If a previous deployment was good, you can roll back: Deployments → previous READY → Promote to Production.
-- **Target:** fix within 1 business day for SEV-3; faster if tenant impact is severe.
+- **Target:** fix within 1 business day for SEV-3 incidents; faster if tenant impact is severe.
 
 ### Playbook E — Failed-authentication burst
 
@@ -121,7 +125,7 @@ For every SEV-1 or SEV-2, fill in:
 ## Incident: [short name]
 
 - **Detected:** [YYYY-MM-DD HH:MM UTC] by [Name / system]
-- **Severity:** SEV-N
+- **Severity:** [critical/high/medium/low] (SEV-N)
 - **Incident commander:** [Name]
 - **Affected systems:** [list]
 - **Affected tenants:** [list, or "internal only"]
@@ -178,11 +182,48 @@ Keep this list current. If anyone leaves the team, update within 24 hours.
 
 ---
 
+## Lifecycle cadence
+
+**When this template is used in the project lifecycle:**
+- ACTIVE from Phase A onward (per `01_apply-order.md`) — incidents can occur even during setup (credential exposure, account compromise).
+- Most heavily used during Phase D (deploy) and Warranty period.
+- Continues into BAU but ops team's incident process takes precedence per `15_warranty-and-bau-handover.md` §7.
+
+**Default cadence:**
+- **Per-incident** invocation — opens when an incident is detected, closes on post-incident review.
+- **Playbooks reviewed quarterly** OR after each invocation (whichever is sooner). A playbook that doesn't reflect lessons from its last use is stale.
+- **Severity scale and emergency contacts reviewed quarterly** to confirm currency.
+
+**Why this default:**
+- Incident response improves with use. The post-incident review is the mechanism that turns each incident into improved playbooks.
+- Quarterly review of playbooks-not-recently-invoked prevents staleness in playbooks that fortunately haven't fired.
+
+**When to amend the cadence:**
+- **Tighten** (monthly review) if: incident volume is high (>1 per month) OR project is in a high-risk phase (initial deploy, post-major-change).
+- **Loosen** (annual review) if: project is in a stable phase with no incidents for >6 months. Watch for complacency — annual review must still actually happen.
+- **Skip entirely** if: project has no production deployment yet (Phase A/B only) — the template still applies to credential exposure incidents, but production-incident playbooks are inactive.
+
+---
+
+## Linked documents
+
+- `01_apply-order.md` — phase context for when incidents can occur.
+- `02_credentials-manifest.md` — credentials list referenced by Playbook A.
+- `05_backup-restore.md` — restore procedures referenced by playbooks involving data loss.
+- `07_raidd-log.md` — every incident produces a RAIDD `issue` entry.
+- `08_lessons-learned.md` — every incident produces a lesson.
+- `10_project-roles.md` — incident commander, escalation path.
+- `15_warranty-and-bau-handover.md` — incident ownership transfer at BAU.
+- `17_triage-guidance.md` — canonical severity definitions + triage workflow.
+
+---
+
 ## Change log
 
-| Date | Change | By |
-|------|--------|-----|
-| [YYYY-MM-DD] | Document created | [Name] |
+| Date | Version | Change | By |
+|---|---|---|---|
+| [YYYY-MM-DD] | 1.0 | Document created | [Name] |
+| 2026-05-19 | 1.1 | Reconciled severity scale with kit-canonical lowercase vocabulary; SEV-1..SEV-4 now documented as aliases. Added Lifecycle cadence section per D-039. Added cross-references to new templates 15, 17. | Claude (Cowork) |
 
 ---
 

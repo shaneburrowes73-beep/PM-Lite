@@ -1,249 +1,179 @@
 # PM Lite — Quickstart
 
-**Deploy a tenant in under 60 minutes.**
+A 30-minute guide to going from "I have the PM Lite kit" to "my project is running with governance in place."
 
-This is the step-by-step for spinning up PM Lite for a new tenant (a client, or your own studio). The full procedure has 11 steps and assumes you already have a Supabase account, a Vercel account, and access to the `pm-lite` GitHub repo.
-
-Estimated time: **45–60 minutes** start to finish.
-Estimated tenant cost: **$0–$45/month** depending on tier.
+This document assumes you've already cloned the repo. If you haven't, see the main [README](../README.md).
 
 ---
 
-## Prerequisites
+## What you'll have at the end of this quickstart
 
-Before you start, confirm you have:
+- A new project folder with the PM Lite templates copied in.
+- A **signed-off Project Initiation Document** (PID) — the foundational agreement.
+- Named **roles** with primary and backup contacts.
+- A **stakeholder communications plan** with named cadences.
+- A **RACI matrix** mapping roles to project workstreams.
+- An empty but ready **RAIDD log** and **decision log** to capture work-in-progress.
+- A **triage rhythm** established with a named triage manager and first backlog review meeting scheduled.
 
-1. A Supabase account (signed in with the tenant's preferred email, or use AI Solutions's account for hosted Studio tier).
-2. A Vercel account on the same email.
-3. Access to the `pm-lite` GitHub repository, or your fork of it.
-4. The tenant's preferred subdomain or custom domain (optional — can be added later).
-5. The tenant's brand colours, logo, and metadata for the rebrand step.
-
-If anything in this list is missing, sort it before starting Step 1.
-
----
-
-## Step 1 — Create the Supabase project (5 min)
-
-1. Open `https://supabase.com/dashboard`.
-2. Click **New project**.
-3. Name it: `pm-lite-<tenantname>` (e.g. `pm-lite-acmestudio`).
-4. Region: pick the closest to the tenant.
-5. Database password: generate one and save it to your password manager (1Password).
-6. Wait ~2 minutes for the project to provision.
-
-When ready, note these three values from **Settings → API**:
-
-- `Project URL` (e.g. `https://xxxxxxxxxxxxx.supabase.co`)
-- `anon public` key
-- `service_role` key — keep this secret, server-side only.
-
-Save all three in 1Password under `AI Solutions / PM Lite / <tenant-name>`.
+That's about 80% of the discipline needed to keep a project on track.
 
 ---
 
-## Step 2 — Run the SQL migrations (10 min)
+## Step 1 — Copy the templates
 
-In the Supabase dashboard:
-
-1. Click **SQL Editor** in the left nav.
-2. Click **New query**.
-3. Open `code/supabase/001_schema.sql` from this folder.
-4. Copy the entire contents, paste into the SQL Editor, click **Run**.
-5. Expected result: "Success. No rows returned."
-6. Repeat in order for:
-   - `code/supabase/002_views.sql`
-   - `code/supabase/003_functions.sql`
-   - `code/supabase/004_feedback_scaffold.sql`
-
-Verify with this query in the SQL Editor:
-
-```sql
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema = 'public'
-  AND table_name IN ('raidd_entries', 'lessons_entries', 'pm_lite_feedback', 'raidd_append_tokens');
+```bash
+# In your project workspace:
+cp -r path/to/PM-Lite/templates path/to/your-project/governance
+cd path/to/your-project/governance
 ```
 
-Expected: **4 rows**.
+Or download the templates folder directly from GitHub if you don't have a local clone.
 
-**Optional:** if the tenant wants a populated dashboard for demo purposes, also run `code/seed-OPTIONAL/001_demo_seed.sql`. This file refuses to run if the database already has non-demo data, so it is safe.
-
----
-
-## Step 3 — Fork or clone the code repo (5 min)
-
-You have two paths:
-
-**Path A — One repo per tenant (recommended for Studio resale):**
-
-1. Fork `https://github.com/shaneburrowes73-beep/pm-lite` to the tenant's GitHub, or to yours managed on their behalf.
-2. Clone locally if you need to make rebrand changes before deploy.
-
-**Path B — Shared multi-tenant repo (Agency tier):**
-
-Use one repo, configure each tenant via env vars only. Not covered here — see the buyer-facing docs in `docs/04_rebrand-guide.md` and the Agency-tier appendix.
-
-For this quickstart, assume Path A.
+The templates folder lands as 19 markdown files plus `CHANGELOG.md`. The `CHANGELOG.md` is the kit's release history — you don't fill it in for your project.
 
 ---
 
-## Step 4 — Create the Vercel project (5 min)
+## Step 2 — Fill in the PID first (≈10 minutes)
 
-1. Open `https://vercel.com/new`.
-2. Import the fork from Step 3.
-3. Framework Preset: **Next.js** (auto-detected).
-4. Project name: `pm-lite-<tenantname>`.
-5. **Do NOT click Deploy yet.** Go to the Environment Variables section first.
+Open `14_project-initiation.md` and fill in every `[bracketed placeholder]`:
 
----
+- Project name, ID, sponsor, lead, dates.
+- Business case — why this project exists.
+- Scope — in, out, and assumptions.
+- Approach — phases and milestones.
+- Budget and schedule with tolerances.
+- Roles (cross-references `10_project-roles.md`).
+- Success criteria — 3-5 measurable items.
 
-## Step 5 — Set environment variables (5 min)
+**Get the sponsor's sign-off before any other work begins.** A PID without sponsor sign-off is wishful thinking.
 
-In the Vercel **Environment Variables** section, add the variables documented in `docs/VERCEL_ENV_VARS.md`. Headline list:
-
-| Name | Value source | Sensitive? |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Step 1 — Project URL | No |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Step 1 — anon public key | No |
-| `SUPABASE_SERVICE_ROLE_KEY` | Step 1 — service_role key | **Yes** (tick Sensitive) |
-| `NEXT_PUBLIC_SITE_URL` | The tenant's planned hostname | No |
-| `BETA_PASSWORD_HASH` | bcrypt hash if running a beta landing | **Yes** |
-
-**Important quirk:** once you tick **Sensitive** and save, the field appears EMPTY when you reopen it. That is normal — the value is saved. Do not re-paste.
-
-For full guidance see `docs/VERCEL_ENV_VARS.md` (the protocol document).
+If the sponsor can't sign off on the PID, that's a signal the project isn't ready to start. Don't paper over disagreement at initiation — it surfaces later, more expensively.
 
 ---
 
-## Step 6 — Configure Supabase Auth URLs (5 min)
+## Step 3 — Populate the roles document (≈5 minutes)
 
-**This is the step that catches most deploys. Get it right the first time.**
+Open `10_project-roles.md`. Fill in:
 
-1. In Supabase dashboard → **Authentication → URL Configuration**.
-2. Set **Site URL** to exactly:
-   ```
-   https://pm-lite-<tenantname>.vercel.app
-   ```
-   (or the custom domain if it's already set).
-3. Under **Redirect URLs**, click **Add URL** for each (one per line):
-   ```
-   https://pm-lite-<tenantname>.vercel.app/tracker/reset-password
-   https://pm-lite-<tenantname>.vercel.app/tracker
-   https://pm-lite-<tenantname>.vercel.app/tracker/**
-   ```
-4. Click **Save**.
+- **Project Sponsor** — name, contact, backup.
+- **Project Lead** — name, contact, backup (who is also the deputy triage manager per `17_triage-guidance.md` §3.3).
+- **Operations Lead** — the person who will receive the project at BAU handover. Even if BAU is months away, name them now.
+- **Technical Lead** if applicable.
+- **Core team** rows.
 
-Without this step, password-reset emails will land on the homepage with `?error=otp_expired` instead of the reset form. See the troubleshooting table at the end of this doc.
+Every role needs a backup. Single-person dependencies are themselves a risk worth logging.
 
 ---
 
-## Step 7 — Deploy (3 min)
+## Step 4 — Set up the RACI matrix (≈5 minutes)
 
-1. Back in Vercel, click **Deploy**.
-2. Wait ~2 minutes for the build.
-3. Click **Visit** when the build goes green.
+Open `16_raci-matrix.md`. The template comes pre-populated with 12 standard rows for typical PM Lite governance tasks. For each row, fill in the R / A / C / I cells using the roles named in step 3.
 
-You should land on the tenant's homepage. If it still says "AI Solutions" or shows the AI Solutions branding, you're good — the rebrand happens in Step 9.
+Add project-specific rows at the bottom of the matrix table — one row per workstream or deliverable that doesn't fit the standard rows.
 
-**Important:** the Vercel home page sometimes shows green while the actual deployment is in ERROR. Open the **Deployments tab** and confirm the latest deployment shows `READY` (not `ERROR`). If it's `ERROR`, click in and read the build log.
+Hard rule: every row has **exactly one A**. If you can't decide who's accountable, the row isn't well-defined yet.
 
 ---
 
-## Step 8 — Create the tenant's first user (3 min)
+## Step 5 — Stakeholder communications plan (≈5 minutes)
 
-In Supabase dashboard → **Authentication → Users → Add user → Send invitation**:
+Open `11_stakeholder-comms-plan.md`. Fill in the stakeholder inventory table:
 
-1. Email: the tenant's preferred login email.
-2. Tick **Auto Confirm User** (so they don't need to click an email link to verify).
-3. Click **Send invitation**.
+- Sponsor → monthly status report + ad-hoc on critical issues.
+- Client (if external) → weekly digest.
+- Team → continuous (Slack / standup).
+- Plus any informed stakeholders (board, investors, compliance).
 
-The tenant clicks the invitation link, sets their password, and lands on `/tracker`.
-
-Alternatively, use **Create new user** and set a temporary password yourself, then share it via 1Password.
-
----
-
-## Step 9 — Rebrand (10 min)
-
-Open `docs/04_rebrand-guide.md` for the full walkthrough. Headline changes:
-
-1. **Logo:** replace `public/logo.svg` with the tenant's logo.
-2. **Colours:** edit `tailwind.config.ts` — change `primary` (default `#2563eb`) and `dark` (default `#1f2937`) to the tenant's brand.
-3. **Site title:** edit `app/layout.tsx` metadata.
-4. **Hero text:** edit `app/page.tsx`.
-
-Commit, push, Vercel auto-deploys. Confirm the new branding renders in the browser.
+Establish the rhythm now. Late communication is harder to recover from than over-communication.
 
 ---
 
-## Step 10 — Verify (5 min)
+## Step 6 — Initialise the decision log (≈2 minutes)
 
-Open the tenant's URL and run through this checklist:
+Open `03_decision-log.md`. The template comes with PRINCE2 default tolerances (±10% budget, ±2 weeks OR ±10% duration for schedule). If you want to amend those for this project, do it now and log the amendment as the first decision in the log.
 
-| Check | Pass criteria |
-|---|---|
-| `/` (homepage) loads | Tenant branding visible, no AI Solutions placeholders |
-| `/tracker/login` loads | Login form visible |
-| Login with tenant credentials | Lands on `/tracker` dashboard |
-| `/tracker/raidd` loads | Empty list (or demo data if you ran the seed) |
-| `/tracker/lessons` loads | Empty list |
-| "New Entry" modal opens | Form validates required fields |
-| Submit a test RAIDD entry | Appears in list, status pill shows correctly |
-| `/tracker/forgot-password` flow | Email arrives, link goes to `/tracker/reset-password` (not the homepage) |
-| Logout button works | Returns to `/tracker/login` |
-
-If any check fails, see Troubleshooting below.
+Common amendments at this stage:
+- Set an absolute currency threshold for scope decisions (e.g., "any decision affecting more than US$5,000 requires sponsor approval regardless of percentage"). Document this in `14_project-initiation.md` §5.
 
 ---
 
-## Step 11 — Hand over to the tenant (5 min)
+## Step 7 — Establish triage rhythm (≈3 minutes)
 
-Send the tenant:
+Open `17_triage-guidance.md`. Confirm:
 
-1. URL: `https://pm-lite-<tenantname>.vercel.app/tracker/login` (or custom domain).
-2. Their email and initial password (delivered via 1Password share — never email).
-3. Link to `docs/01_what-is-pm-lite.md` and the 8 template files in `templates/`.
-4. Offer a 30-minute walkthrough call (included in Studio tier and above).
+- **Triage manager** = Project Lead (per §3.3 default).
+- **Deputy triage manager** = the Project Lead's backup from `10_project-roles.md`.
+- **Triage backlog review meeting** = scheduled per the phase you're in (see §3.5 — typically monthly in Phase A, weekly from Phase C onward).
 
----
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| Build fails with "Module not found: @supabase/ssr" | Repo dependencies outdated | `npm install` locally, commit `package.json` + lockfile, push |
-| Login works but `/tracker` redirects back to login | Cookies not persisting | Confirm `NEXT_PUBLIC_SITE_URL` matches the actual hostname exactly (no trailing slash) |
-| Password-reset email goes to homepage with `?error=otp_expired` | Step 6 incomplete OR email opened too late (OTP expires in ~5 min) | Redo Step 6, request a new email, click within 60 seconds |
-| Password-reset email lands on wrong domain | Step 6 Site URL wrong | Fix Site URL in Supabase, request new email |
-| "Failed to fetch" in browser console on `/tracker/raidd` | Env vars not set, or service-role key revoked | Verify all 5 env vars in Vercel, redeploy |
-| Vercel shows "successful" but page shows old content | Vercel cache | Vercel → Deployments → 3-dot menu → Redeploy → untick "Use existing build cache" |
-| RAIDD / Lessons POST returns 401 | Service-role key not present at runtime | Confirm `SUPABASE_SERVICE_ROLE_KEY` is in env vars (not just `SUPABASE_ANON_KEY`) |
-| Vercel home page shows green but app errors | Latest deployment is in ERROR | Open Deployments tab and check `readyState` of the latest production deployment |
+Get the first triage backlog review meeting on the calendar before you start any other project work.
 
 ---
 
-## Optional polish (do after handover)
+## Step 8 — Start working
 
-- **Custom domain:** Vercel → Project → Settings → Domains → Add → follow DNS instructions.
-- **Re-add custom domain to Supabase Redirect URLs** (Step 6) once added.
-- **Email branding:** Supabase → Auth → Email Templates → customise sender name and body.
-- **Backup schedule:** Supabase → Database → Backups → confirm Point-in-Time Recovery enabled (Pro tier).
-- **Deployment Protection:** Vercel → Settings → Deployment Protection → enable for `/api/*` rate-limited routes.
+Phase A is now ready to execute. Open `01_apply-order.md` and `06_project-checklist.md` and start checking off items.
 
----
+As work proceeds:
 
-## Cost summary
-
-| Item | Cost |
-|---|---|
-| Supabase Free tier | $0/month (sufficient until ~5k rows) |
-| Vercel Hobby tier | $0/month |
-| Custom domain (optional) | ~$12/year |
-| **Total month 1** | $0–$5 |
-
-If the tenant scales to Pro: $25 Supabase + $20 Vercel = $45/month. Still under most enterprise PM tools' single-seat pricing.
+- **Every decision** → entry in `03_decision-log.md`.
+- **Every risk, assumption, issue, dependency** → entry in `07_raidd-log.md`.
+- **Every meeting** → minutes + RAIDD entries per `09_meeting-protocol.md`.
+- **Every incoming item (issue, request, alert)** → triage per `17_triage-guidance.md` §1.
+- **Every credential created** → `02_credentials-manifest.md` entry.
+- **Every status update to sponsor** → `12_status-report.md` (monthly default).
 
 ---
 
-**Next:** `03_pricing-model.md` for the resale conversation, or `04_rebrand-guide.md` for the visual rebrand in detail.
+## What to do at each phase transition
+
+The discipline that prevents drift is **gate-keeping at phase transitions**. Before moving from Phase A to Phase B, from B to C, etc., the project lead confirms every checkbox in the previous phase of `06_project-checklist.md` is ticked OR has a strike-through with rationale.
+
+A phase transition without gate review is a phase transition that hides problems.
+
+---
+
+## When the project ends
+
+- **End of Phase E:** Draft `13_project-closure.md`. Get sponsor sign-off.
+- **Closure sign-off triggers warranty period.** Default 30 days per `15_warranty-and-bau-handover.md`.
+- **End of warranty:** Walk the BAU handover checklist in `15_warranty-and-bau-handover.md` §5. Get sign-off from Project Lead (releasing) + Operations Lead (receiving) + Sponsor (witnessing).
+- **At BAU handover:** Triage manager role transfers from Project Lead to Operations Lead.
+
+After BAU handover, the project lifecycle is complete. The templates remain as the historical record.
+
+---
+
+## Common pitfalls
+
+These come up enough that they're worth flagging up front:
+
+- **Starting Phase B without sponsor PID sign-off.** Don't. The agreement has to be in writing.
+- **"We'll write up the decision log after."** No, you won't. Capture decisions at the moment they're made.
+- **One-person-does-everything RACI.** If the Project Lead is A and R on every row, the team is under-used and the lead will burn out.
+- **Warranty as an afterthought.** The warranty period is when most "post-launch chaos" happens. Plan it at initiation, not at closure.
+- **Triage as a meeting.** Per-item triage is a 2-minute solo decision. The recurring backlog review meeting is separate.
+- **Stale roles document.** A wrong roles doc is worse than no roles doc. Update within 24 hours of any team change.
+
+---
+
+## When NOT to use PM Lite
+
+Be honest with yourself if any of these apply — PM Lite is the wrong tool:
+
+- **Enterprise programme with regulatory obligations** — use PRINCE2 or PMI processes.
+- **Highly variable scope with rapid iteration** — agile/scrum, not phase-gate.
+- **Single tiny task taking <1 day** — overkill. Just do the work.
+
+---
+
+## Where to go next
+
+- Read individual templates as you need them — each has a "Why this document exists" section at the top.
+- The kit-level change history is in [`templates/CHANGELOG.md`](../templates/CHANGELOG.md).
+- Versioning practice and amendment workflow are in [`VERSION_CONTROL.md`](../VERSION_CONTROL.md).
+- The full template reference is in `01_what-is-pm-lite.md`.
+
+---
+
+**End of quickstart.**
