@@ -1,7 +1,8 @@
 # [Project Name] — Incident Response
 
-**Version:** 1.1
-**Date:** [YYYY-MM-DD]
+**Document version:** 1.1
+**Kit version:** v1.2.0
+**Document status:** ACTIVE
 **Owner:** [Name]
 **On-call:** [Name + contact, or "see 1Password rota"]
 

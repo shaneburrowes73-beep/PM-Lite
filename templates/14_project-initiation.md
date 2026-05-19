@@ -1,8 +1,10 @@
 # [Project Name] — Project Initiation Document (PID)
 
-**Version:** 1.0
+**Document version:** 1.0
+**Kit version:** v1.2.0
+**Document status:** ACTIVE
 **Date:** [YYYY-MM-DD]
-**Status:** [DRAFT / SIGNED-OFF / SUPERSEDED]
+**PID status:** [DRAFT / SIGNED-OFF / SUPERSEDED]
 **Project ID:** [slug, e.g. `pm-lite`]
 **Authors:** [Names]
 

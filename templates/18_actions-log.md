@@ -1,8 +1,9 @@
 # [Project Name] — Actions Log
 
-**Version:** 1.0 (PM Lite kit v1.1)
+**Document version:** 1.0
+**Kit version:** v1.2.0
+**Document status:** ACTIVE
 **Date:** [YYYY-MM-DD]
-**Status:** [DRAFT / ACTIVE / SUPERSEDED]
 **Project ID:** [slug, e.g. `pm-lite`]
 **Authors:** [Names]
 

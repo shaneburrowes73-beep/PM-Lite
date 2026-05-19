@@ -1,8 +1,9 @@
 # [Project Name] — Triage Guidance
 
-**Version:** 1.0
+**Document version:** 1.0
+**Kit version:** v1.2.0
+**Document status:** ACTIVE
 **Date:** [YYYY-MM-DD]
-**Status:** [DRAFT / ACTIVE / SUPERSEDED]
 **Project ID:** [slug, e.g. `pm-lite`]
 **Authors:** [Names]
 
@@ -161,9 +162,9 @@ Default SLAs for per-item triage by category. These apply to the per-item activi
 
 | Category | First triage verdict | First action |
 |---|---|---|
-| **Incident — Critical** | 30 minutes | Immediate; on-call paged |
-| **Incident — High** | 2 business hours | Same day |
-| **Incident — Medium / Low** | 1 business day | Within 3 business days |
+| **Incident — critical** | 30 minutes | Immediate; on-call paged |
+| **Incident — high** | 2 business hours | Same day |
+| **Incident — medium / low** | 1 business day | Within 3 business days |
 | **Warranty** | 2 business days | Per warranty doc §4 |
 | **Scope decision** | 5 business days | Per decision log §"Scope decisions" |
 | **Known-and-accepted** | Same day | Link to existing entry; close |
@@ -175,16 +176,18 @@ Default SLAs for per-item triage by category. These apply to the per-item activi
 
 ---
 
-## 5. Incident severity definitions
+## 5. Severity definitions (kit canonical)
 
-Used by triage to assign incidents to Critical / High / Medium / Low. These are the PM Lite defaults; buyers can override during project initiation.
+This is the **canonical severity vocabulary** for the entire PM Lite kit. Every template that records severity (`07_raidd-log.md`, `08_lessons-learned.md`, `12_status-report.md`, `04_incident-response.md`, this document) uses these four lowercase values.
 
 | Severity | What it means | Examples |
 |---|---|---|
-| **Critical** | Production is down OR customer data is at risk OR active security breach | Site is 500-ing; database leak; auth bypass discovered |
-| **High** | Major function broken OR a workaround exists but is unsustainable | Payments failing for a subset of users; key integration offline |
-| **Medium** | Function impaired but workable | Slow performance; one feature broken; cosmetic issues in critical flows |
-| **Low** | Minor impact OR cosmetic | Typos; non-critical UI issues; logging gaps |
+| **critical** | Production is down OR customer data is at risk OR active security breach | Site is 500-ing; database leak; auth bypass discovered |
+| **high** | Major function broken OR a workaround exists but is unsustainable | Payments failing for a subset of users; key integration offline |
+| **medium** | Function impaired but workable | Slow performance; one feature broken; cosmetic issues in critical flows |
+| **low** | Minor impact OR cosmetic | Typos; non-critical UI issues; logging gaps |
+
+**Incident-specific aliases:** `04_incident-response.md` uses `SEV-1` / `SEV-2` / `SEV-3` / `SEV-4` as shorthand for `critical` / `high` / `medium` / `low` respectively. These aliases are convenience-only for incident pagers and runbooks; the underlying values are the canonical lowercase form above.
 
 Severity is decided at triage and may be revised. Revisions are logged in the incident timeline per `04_incident-response.md`.
 
@@ -202,7 +205,7 @@ Minimum fields for a triage record:
 | **Source** | Who/what raised it (customer email, alert, internal observation) |
 | **Title** | One-line description |
 | **Category** | One of the five from §2 |
-| **Severity** (if incident) | One of Critical/High/Medium/Low from §5 |
+| **Severity** (if incident) | One of critical/high/medium/low from §5 |
 | **Triage verdict** | The reasoning — why this category, why this severity |
 | **Triaged by** | Name of the person who did the triage (the triage manager or deputy) |
 | **Routed to** | Person or document that owns it next |
@@ -234,7 +237,7 @@ What NOT to do, with the failure mode each enables:
 
 | Anti-pattern | Why it's wrong | What to do instead |
 |---|---|---|
-| **"Everything is high severity."** | Severity loses meaning; nothing gets prioritised. | Use the severity definitions in §5 ruthlessly. If everything is High, something is wrong with the system, not with severity. |
+| **"Everything is high severity."** | Severity loses meaning; nothing gets prioritised. | Use the severity definitions in §5 ruthlessly. If everything is `high`, something is wrong with the system, not with severity. |
 | **Per-item triage as a meeting** | Wastes 5 people's time to make a 2-minute decision. | Per-item triage is a single-person decision (the triage manager). Disputes go to the backlog review meeting or escalation. |
 | **"Let's just fix it" without categorising** | You can't measure what you don't categorise. You also can't notice patterns. | Always categorise, even if you're about to fix immediately. The record is fast (1 minute). |
 | **Triage SLA missed silently** | Backlog grows invisibly until it's a crisis. | Triage SLA breaches should themselves trigger an alert. The triage manager is responsible for flagging if SLA is at risk. |
