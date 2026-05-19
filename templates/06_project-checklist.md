@@ -1,6 +1,6 @@
 # [Project Name] — Project Checklist
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** [YYYY-MM-DD]
 **Owner:** [Name]
 
@@ -19,6 +19,9 @@ This is the granular checklist for every phase of the project, complementary to 
 - [ ] Subfolders created: `specs/`, `code/`, `docs/`, `artifacts/`.
 - [ ] `PROJECT-CONFIG.md` written and committed.
 - [ ] `LICENCE.md` written (only for sellable products).
+- [ ] `14_project-initiation.md` (PID) drafted and signed by Sponsor + Project Lead + Operations Lead.
+- [ ] `10_project-roles.md` populated with named individuals.
+- [ ] `16_raci-matrix.md` populated with project-specific rows.
 
 ### A.2 GitHub repository
 - [ ] Repo created at `https://github.com/[org]/[repo-name]`.
@@ -50,6 +53,12 @@ This is the granular checklist for every phase of the project, complementary to 
 - [ ] `docs/VERCEL_ENV_VARS.md` written.
 - [ ] `docs/SECURITY_CHECKLIST.md` written.
 - [ ] `docs/EMAIL_CONFIG.md` written (or marked N/A).
+
+### A.6 Governance baseline
+- [ ] `03_decision-log.md` initialised with project-specific tolerances confirmed (or kit defaults accepted).
+- [ ] `07_raidd-log.md` initialised; first batch of initiation-time risks/assumptions captured.
+- [ ] `11_stakeholder-comms-plan.md` populated.
+- [ ] `17_triage-guidance.md` reviewed; triage manager confirmed as Project Lead; deputy named.
 
 ---
 
@@ -100,6 +109,11 @@ This is the granular checklist for every phase of the project, complementary to 
 - [ ] `git log -p --all -S 'password\|token\|secret\|ghp_\|sk_'` returns nothing concerning.
 - [ ] Supabase RLS check: every public table has `rowsecurity = true`.
 
+### C.5 Triage rhythm established
+- [ ] Triage backlog review meeting scheduled and held weekly (per `17_triage-guidance.md` §3.5).
+- [ ] Required attendees (Project Lead, Tech Lead, Ops Lead) confirmed.
+- [ ] First triage review meeting produced minutes and RAIDD entries.
+
 ---
 
 ## Phase D — Deploy
@@ -119,7 +133,7 @@ This is the granular checklist for every phase of the project, complementary to 
 
 ### D.3 Post-deploy
 - [ ] Monitor for 24 hours — Vercel logs, Supabase logs.
-- [ ] No critical alerts from CodeQL or Dependabot.
+- [ ] No `critical` alerts from CodeQL or Dependabot.
 - [ ] First user (internal or tenant) successfully completes the main workflow.
 - [ ] Status promoted in `applications` table (BETA → READY).
 
@@ -143,10 +157,36 @@ This is the granular checklist for every phase of the project, complementary to 
 - [ ] Q&A documented in `08_lessons-learned.md`.
 - [ ] Recipient confirms they can run a routine operation (add an entry, run a report) without help.
 
-### E.4 Sign-off
+### E.4 Closure
+- [ ] `13_project-closure.md` drafted with deliverable verdicts, success criteria assessment, final budget, final schedule.
+- [ ] Closure signed off by Sponsor + Project Lead + Operations Lead.
 - [ ] Project marked `READY` (or `BETA` if applicable) in the `applications` table.
 - [ ] First scheduled review date set (monthly per `ai-solutions-cloud-first-practices` step 10).
 - [ ] Project added to the bootstrap-skill registry (so future Cowork threads know about it).
+
+### E.5 Warranty period (NEW — covers the post-closure stage before BAU)
+
+The warranty period runs from closure sign-off for the duration defined in `15_warranty-and-bau-handover.md` (default: 30 days). During warranty, the project team is still on the hook for defects in delivered work.
+
+- [ ] Warranty period start and end dates recorded in `15_warranty-and-bau-handover.md` §1.
+- [ ] Triage SLA confirmed for warranty issues (default: 2 business days per `15` §"Lifecycle cadence").
+- [ ] Weekly triage backlog meeting continues throughout warranty period.
+- [ ] Warranty workflow (per `15` §4) followed for each issue raised: triage as warranty / new request / known-and-accepted.
+- [ ] Any new requests during warranty routed to `03_decision-log.md` as Scope Decisions, NOT absorbed silently.
+
+### E.6 BAU handover (NEW — formal transfer to operations)
+
+BAU handover is the formal end of the project lifecycle. Per `15_warranty-and-bau-handover.md` §5, all of the following must be confirmed before sign-off.
+
+- [ ] Operations Lead has access to all credentials in `02_credentials-manifest.md` (verified by ops lead attempting access).
+- [ ] Operations Lead has `04_incident-response.md` runbook AND has read it (ideally walked through one tabletop scenario).
+- [ ] `05_backup-restore.md` procedures tested IN OPS TEAM'S HANDS (backup created by ops, restore tested by ops).
+- [ ] Monitoring and alerting routed to ops team's channels. Ops team has acknowledged at least one test alert.
+- [ ] Knowledge transfer sessions complete and logged (per `15` §5 knowledge transfer log).
+- [ ] Warranty period elapsed OR explicitly extended in writing.
+- [ ] All warranty-period open items resolved OR formally accepted by ops team.
+- [ ] **Triage manager role transferred** from Project Lead to Operations Lead (per `17_triage-guidance.md` §3.3). Date recorded.
+- [ ] BAU handover signed off by Project Lead (releasing) + Operations Lead (receiving) + Sponsor (witnessing) per `15` §6.
 
 ---
 
@@ -155,15 +195,51 @@ This is the granular checklist for every phase of the project, complementary to 
 1. **Don't skip C.4** (security verification). Security has to be at the end of testing, not after deploy.
 2. **Don't promote to production with open `severity='critical'` issues.** Resolve or downgrade with rationale.
 3. **Don't hand over without a successful restore drill in the last 30 days.** If you've never restored, you have no backup.
-4. **Update PROJECT-CONFIG.md "Last Updated"** every time you tick off a major section here.
+4. **Don't declare closure without sign-offs in E.4.** A project that's "done" without a signed closure report is a project that gets re-litigated later.
+5. **Don't enter BAU without ticking every box in E.6.** An unprepared ops team is worse than an extended warranty.
+6. **Update PROJECT-CONFIG.md "Last Updated"** every time you tick off a major section here.
+
+---
+
+## Lifecycle cadence
+
+**When this template is used in the project lifecycle:**
+- ACTIVE from Phase A through BAU handover (per `01_apply-order.md` + new Phases E.5/E.6 above).
+- The single most-referenced governance document throughout the project — it's the "are we ready to move on?" gate at every phase transition.
+
+**Default cadence:**
+- **Checked off** as each item completes — no fixed cadence, event-driven.
+- **Reviewed at every phase transition** (A→B, B→C, etc.) — the project lead confirms every box in the previous phase is ticked OR has a strike-through with rationale.
+- **Updated** if a step doesn't apply OR if a new step is required for this project (mark amendments in the change log).
+
+**Why this default:**
+- Phase-gate review is the discipline that prevents premature progression. "Are we ready to deploy?" requires Phase C complete, not Phase C "mostly done."
+- Project-specific amendments are normal but must be visible — a strike-through with reason is auditable; a deletion is not.
+
+**When to amend the cadence:**
+- **Tighten** (weekly review of open items) if: project is in trouble OR phase has dragged on past expected duration.
+- **Loosen** (review only at phase transitions) if: project is on track AND team is small enough that progress is visible without formal review.
+- **Skip entirely** is not an option — this is the foundational gate-keeping artefact. If you skip it, you don't have governance.
+
+---
+
+## Linked documents
+
+- `01_apply-order.md` — high-level phase view; this checklist is the granular form.
+- `14_project-initiation.md` — PID referenced in A.1 and at every closure assessment.
+- `13_project-closure.md` — closure assessment in E.4.
+- `15_warranty-and-bau-handover.md` — defines E.5 and E.6 in detail.
+- `16_raci-matrix.md` — referenced in A.1 sign-off.
+- `17_triage-guidance.md` — referenced in A.6, C.5, E.5, E.6.
 
 ---
 
 ## Change log
 
-| Date | Change | By |
-|------|--------|-----|
-| [YYYY-MM-DD] | Document created | [Name] |
+| Date | Version | Change | By |
+|---|---|---|---|
+| [YYYY-MM-DD] | 1.0 | Document created | [Name] |
+| 2026-05-19 | 1.1 | Added Phase A.6 governance baseline. Added Phase C.5 triage rhythm. Added Phase E.4 closure (formerly E.4 sign-off, expanded). Added Phase E.5 warranty period. Added Phase E.6 BAU handover. Added Hard Rules 4 and 5. Added Lifecycle cadence section per D-039. | Claude (Cowork) |
 
 ---
 
