@@ -1,6 +1,8 @@
 # [Project Name] — RACI Matrix
 
-**Version:** 1.0
+**Document version:** 1.0
+**Kit version:** v1.2.0
+**Document status:** ACTIVE
 **Date:** [YYYY-MM-DD]
 **Status:** [DRAFT / ACTIVE / SUPERSEDED]
 **Project ID:** [slug]

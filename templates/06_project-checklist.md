@@ -1,6 +1,8 @@
 # [Project Name] — Project Checklist
 
-**Version:** 1.1
+**Document version:** 1.1
+**Kit version:** v1.2.0
+**Document status:** ACTIVE
 **Date:** [YYYY-MM-DD]
 **Owner:** [Name]
 

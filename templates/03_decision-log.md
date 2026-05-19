@@ -1,6 +1,8 @@
 # [Project Name] — Decision Log
 
-**Version:** 1.3
+**Document version:** 1.4
+**Kit version:** v1.2.0
+**Document status:** ACTIVE
 **Date started:** [YYYY-MM-DD]
 **Owner:** [Name]
 
@@ -78,6 +80,29 @@ PMBOK's Integrated Change Control reminds us that scope, schedule, and budget in
 - Useful where the percentage default could approve uncomfortably large amounts on a large project, or where the percentage default rejects acceptably small amounts on a small project.
 
 Amendments are themselves scope decisions — log them in this document with the rationale.
+
+### Recognising scope creep
+
+Scope creep is the silent enemy of small-team projects. It rarely arrives as a single big decision — it accumulates as a series of small "while we're at it" additions, each individually defensible, that together blow the original scope.
+
+**Warning signs you're in scope creep, not legitimate evolution:**
+
+- **"While we're at it"** — appearing in meetings or PR descriptions. Almost always scope creep.
+- **No decision in this log** — work is being added but no scope decision has been logged. Silent additions = scope creep.
+- **Build phase >2x original estimate** — the most reliable signal. Build that won't end is usually scope that won't stop.
+- **Team is excited about a new feature** — enthusiasm is good, but if the feature wasn't in the PID, the decision to add it is a scope decision, not a build task.
+- **Acceptance criteria keep expanding** — original PID listed 5 criteria, now there are 12. Each new criterion is a scope decision.
+- **Re-baselines are accumulating** — more than 2 re-baselines on the same project is a red flag (see `20_stage-gates.md` §8 anti-patterns).
+- **The phrase "v1.0 should also do X"** — said by the team, NOT the sponsor. If the sponsor isn't asking, the team is creeping scope.
+
+**What to do when you spot it:**
+
+1. **Stop adding silently.** The moment you recognise a scope decision is being made informally, pause and write it up using the extended format below.
+2. **Sponsor decides.** Bring it to the sponsor with: original scope, proposed addition, budget impact, timeline impact. Let the sponsor explicitly approve or decline.
+3. **If declined:** capture the idea as a v1.1 candidate (in the actions log, or the portfolio backlog). It's not lost — just deferred.
+4. **If approved:** log the scope decision properly with the extended format. Update PID, status report, stakeholder comms.
+
+**Anti-pattern alert:** re-baselining without scrutiny. "Update the baseline" can become a way to retroactively make scope creep look authorised. Each re-baseline must go through the extended format with sponsor sign-off. Multiple re-baselines on the same project (>2) means the original PID was probably too vague — fix the root cause, don't keep papering over it.
 
 ### Extended format for scope decisions
 
@@ -248,6 +273,7 @@ Specifically for scope decisions: review cumulative scope impact across the proj
 | 2026-05-15 | 1.1 | Added Scope Decisions section per PM Lite template gap analysis. | Claude (Cowork) |
 | 2026-05-19 | 1.2 | Replaced placeholder tolerances with PRINCE2 defaults (10% budget, 2 weeks OR 10% duration). Added "Why these defaults" and "When to amend" sections. Added Lifecycle cadence section per D-039. Updated linked documents to reference new templates 14, 15, 16, 17. | Claude (Cowork) |
 | 2026-05-19 | 1.3 | Added D-040 as worked example of a process-exception decision (kit-development context). | Claude (Cowork) |
+| 2026-05-19 | 1.4 | Added "Recognising scope creep" subsection with 7 warning signs and 4-step response. Anti-pattern alert about uncontrolled re-baselining. Aligns with 20_stage-gates.md §8 anti-patterns. | Claude (Cowork) |
 
 ---
 
